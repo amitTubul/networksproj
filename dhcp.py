@@ -6,9 +6,10 @@ from scapy.layers.dhcp import *
 clientIP = "10.0.0.11"
 dnsIP = "10.0.0.12"
 dhcpIp = "10.0.0.10"
-macaddr = RandMAC()
+macaddr = RandMAC()  # taking a random mac address
 
 
+# this function handles a dhcp discover request from the client
 def handle_dhcp_discover(pack):
     # this is the mac address of the client
     client_mac_addr = pack[Ether].src
@@ -47,7 +48,8 @@ def handle_dhcp_discover(pack):
     sendp(dhcp_response, iface="enp0s3")
 
 
-
+# this function handles a dhcp response from the client, it will accept the ip request and send 'ack'
+# notice that we use the senders information to send it back to the client
 def handle_dhcp_response(pack):
     client_mac_addr = pack[Ether].src
     transaction_id = pack[BOOTP].xid

@@ -63,9 +63,11 @@ def handle_dhcp_response(dhcp_offer):
 
 
 # this function sends a dns query to the dns server and then sniffs for a query response from the dns server
+# notice that we use a udp packet
 def send_dns_query(clientIp, dnsIp, domainName):
     ipInfo = IP(src=clientIp, dst=dnsIp)
     udpInfo = UDP(sport=53, dport=53)
+    # qd is the requested website address , using DNSQR function for a dns queries, qr=0 because it is a query
     dnsInfo = DNS(qd=DNSQR(qname=domainName), qr=0)
     query_pkt = ipInfo / udpInfo / dnsInfo
 
