@@ -2,10 +2,13 @@ from time import sleep
 
 from scapy.all import *
 from scapy.layers.dhcp import *
+from scapy.layers.dns import DNS, DNSQR, DNSRR
 
 macaddr = "02:42:02:8c:72:a8"
+domainName = "google.com"
 
 
+# this function generates a dhcp discover query and broadcast it over udp
 def generate_dhcp_discover():
     # creating necessary information for the request:
     # ethInfo is the ethernet protocol information,needed for the link layer,dst mac address is set to broadcast address
@@ -32,6 +35,8 @@ def generate_dhcp_discover():
     sendp(dhcp_discover, iface="enp0s3")
 
 
+# this function handles dhcp response from a dhcp so that it requests the ip from dhcp offer
+# from the dhcp server over udp
 def handle_dhcp_response(dhcp_offer):
     offered_server_id = dhcp_offer[DHCP].options[1][1]
     offered_ip_address = dhcp_offer[BOOTP].yiaddr
@@ -57,19 +62,35 @@ def handle_dhcp_response(dhcp_offer):
     sendp(dhcp_request, iface="enp0s3")
 
 
+# this function sends a dns query to the dns server and then sniffs for a query response from the dns server
+def send_dns_query(clientIp, dnsIp, domainName):
+    ipInfo = IP(src=clientIp, dst=dnsIp)
+    udpInfo = UDP(sport=53, dport=53)
+    dnsInfo = DNS(qd=DNSQR(qname=domainName), qr=0)
+    query_pkt = ipInfo / udpInfo / dnsInfo
+
+    send(query_pkt, verbose=0)
+    response = sniff(filter=f'host {clientIp}', iface="enp0s3", count=1)[0]
+
+    if response and response.haslayer(DNSRR):
+        print(f"The IP address of {domainName} is {response[DNSRR].rdata}")
+        return response[DNSRR].rdata
+    else:
+        print(f"DNS lookup for {domainName} failed.")
+        return None
+
+
 if __name__ == "__main__":
     generate_dhcp_discover()
     sniff(filter="udp and (port 67 or port 68)", iface="enp0s3", count=1,
           prn=handle_dhcp_response)
     ans = sniff(filter="udp and (port 67 or port 68)", iface="enp0s3", count=1)
     pack = ans[0]
-    dnsIp = clientIP = None
 
     # if ack received so we completed the dhcp progress
-    if pack[DHCP].options[0][1] == 5:
-        dnsIp = pack[DHCP].options[1][1]
-        clientIP = pack[BOOTP].yiaddr
-    else:
+    if pack[DHCP].options[0][1] != 5:
         raise ValueError("try again")
 
-
+    dnsIp = pack[DHCP].options[1][1]
+    clientIp = pack[BOOTP].yiaddr
+    appIp = send_dns_query(clientIp, dnsIp, domainName)
