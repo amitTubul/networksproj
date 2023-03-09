@@ -1,3 +1,4 @@
+import socket
 import urllib.request
 from time import sleep
 from scapy.all import *
@@ -86,7 +87,7 @@ def send_dns_query(clientIp, dnsIp, domainName):
         return None
 
 
-def http_server_connection(server_ip, dnsIp, clientIp):
+def tcp_http_server(server_ip, dnsIp, clientIp):
     server_address = (server_ip, http_port)
 
     # Create client socket and connect to server
@@ -109,11 +110,74 @@ def http_server_connection(server_ip, dnsIp, clientIp):
             redirect_url = match.group(1)
             print(f"Redirected to {redirect_url}\nconnecting dns...")
             redirected_http_ip = send_dns_query(clientIp, dnsIp, redirect_url)
-            http_server_connection(redirected_http_ip, dnsIp, clientIp)
+            tcp_http_server(redirected_http_ip, dnsIp, clientIp)
     elif re.search('200', response_str):
         print(response_str)
 
     # Close client socket
+    client_socket.close()
+
+
+# def rudp_reliability(client_socket, server_address, options):
+#     if options == 1:
+#         syn_request = "SYN"
+#         client_socket.sendto(syn_request.encode(), server_address)
+#         while True:
+#             response = client_socket.recv(1024)
+#             response_str = response.decode('utf-8')
+#             if re.search("SYN, ACK", response_str):
+#                 ACK = "ACK"
+#                 client_socket.sendto(ACK.encode(), server_address)
+#                 return True
+#     if options == 2:
+#         while True:
+#             response = client_socket.recv(1024)
+#             response_str = response.decode('utf-8')
+#             if re.search("ACK", response_str):
+#                 ACK = "ACK"
+#                 client_socket.sendto(ACK.encode(), server_address)
+#                 return True
+#
+#     if options == 3:
+#         fin_request = "FIN"
+#         client_socket.sendto(fin_request.encode(), server_address)
+#         while True:
+#             response = client_socket.recv(1024)
+#             response_str = response.decode('utf-8')
+#             if re.search("FIN, ACK", response_str):
+#                 ACK = "ACK"
+#                 client_socket.sendto(ACK.encode(), server_address)
+#                 return True
+#
+#     return False
+
+
+def rudp_http_server(server_ip, dnsIp, clientIp):
+    server_address = (server_ip, http_port)
+
+    # Create client socket and connect to server
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    # Create HTTP GET request
+    http_get_request = f"GET /example.txt HTTP/1.1\r\nHost: {server_ip}\r\n\r\n"
+
+    # Send HTTP GET request to server
+    client_socket.sendto(http_get_request.encode(), server_address)
+
+    # Receive and print response from server
+    response = client_socket.recv(1024)
+    response_str = response.decode('utf-8')
+    if re.search('302', response_str):
+        # Handle redirect
+        match = re.search(r'Location: (.*?)\r\n', response_str)
+        if match:
+            redirect_url = match.group(1)
+            print(f"Redirected to {redirect_url}\nconnecting dns...")
+            redirected_http_ip = send_dns_query(clientIp, dnsIp, redirect_url)
+            rudp_http_server(redirected_http_ip, dnsIp, clientIp)
+    elif re.search('200', response_str):
+        print(response_str)
+    # close server socket
     client_socket.close()
 
 
@@ -136,4 +200,10 @@ if __name__ == "__main__":
     clientIP = "10.0.0.11"
     dnsIP = "10.0.0.12"
     http_ip = "0.0.0.0"
-    http_server_connection(http_ip, dnsIP, clientIP)
+    # connection_type = input("enter 1 for tcp and 2 for rudp")
+    # if connection_type == 1:
+    # tcp_http_server(http_ip, dnsIP, clientIP)
+    # elif connection_type == 2:
+    rudp_http_server(http_ip, dnsIP, clientIP)
+    # else:
+    #     print("incorrect input, please try again")
