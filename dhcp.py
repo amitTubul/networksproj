@@ -29,7 +29,7 @@ def handle_dhcp_discover(pack):
 
     # bootpInfo is the boostrap protocol information , needed for the network layer and service
     # the dhcp for lookup for a free address, op is 2 because it is a reply
-    bootpInfo = BOOTP(op=2, yiaddr=clientIP, siaddr="10.0.0.10",
+    bootpInfo = BOOTP(op=2, yiaddr=clientIP, siaddr=dhcpIp,
                       chaddr=client_mac_addr, xid=transaction_id)
 
     # dhcpInfo is the user datagram protocol information , needed for the network layer

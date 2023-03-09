@@ -1,11 +1,15 @@
+import urllib.request
 from time import sleep
-
 from scapy.all import *
 from scapy.layers.dhcp import *
 from scapy.layers.dns import DNS, DNSQR, DNSRR
+from scapy.layers.http import HTTPResponse
+from scapy.layers.inet import TCP
 
 macaddr = "02:42:02:8c:72:a8"
-domainName = "google.com"
+http_domainName = "http_server.com"
+http_port = 80
+client_port = 5000
 
 
 # this function generates a dhcp discover query and broadcast it over udp
@@ -82,17 +86,54 @@ def send_dns_query(clientIp, dnsIp, domainName):
         return None
 
 
+def http_server_connection(server_ip, dnsIp, clientIp):
+    server_address = (server_ip, http_port)
+
+    # Create client socket and connect to server
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect(server_address)
+
+    # Create HTTP GET request
+    http_get_request = f"GET /example.txt HTTP/1.1\r\nHost: {server_ip}\r\n\r\n"
+
+    # Send HTTP GET request to server
+    client_socket.send(http_get_request.encode())
+
+    # Receive and print response from server
+    response = client_socket.recv(1024)
+    response_str = response.decode()
+    if re.search('302', response_str):
+        # Handle redirect
+        match = re.search(r'Location: (.*?)\r\n', response_str)
+        if match:
+            redirect_url = match.group(1)
+            print(f"Redirected to {redirect_url}\nconnecting dns...")
+            redirected_http_ip = send_dns_query(clientIp, dnsIp, redirect_url)
+            http_server_connection(redirected_http_ip, dnsIp, clientIp)
+    elif re.search('200', response_str):
+        print(response_str)
+
+    # Close client socket
+    client_socket.close()
+
+
 if __name__ == "__main__":
-    generate_dhcp_discover()
-    sniff(filter="udp and (port 67 or port 68)", iface="enp0s3", count=1,
-          prn=handle_dhcp_response)
-    ans = sniff(filter="udp and (port 67 or port 68)", iface="enp0s3", count=1)
-    pack = ans[0]
+    # generate_dhcp_discover()
+    # sniff(filter="udp and (port 67 or port 68)", iface="enp0s3", count=1,
+    #       prn=handle_dhcp_response)
+    # ans = sniff(filter="udp and (port 67 or port 68)", iface="enp0s3", count=1)
+    # pack = ans[0]
+    #
+    # # if ack received so we completed the dhcp progress
+    # if pack[DHCP].options[0][1] != 5:
+    #     raise ValueError("try again")
+    #
+    # dnsIp = pack[DHCP].options[1][1]
+    # clientIp = pack[BOOTP].yiaddr
+    # http_ip = send_dns_query(clientIp, dnsIp, http_domainName)
 
-    # if ack received so we completed the dhcp progress
-    if pack[DHCP].options[0][1] != 5:
-        raise ValueError("try again")
-
-    dnsIp = pack[DHCP].options[1][1]
-    clientIp = pack[BOOTP].yiaddr
-    appIp = send_dns_query(clientIp, dnsIp, domainName)
+    # Set the URL of the server to download the file from
+    clientIP = "10.0.0.11"
+    dnsIP = "10.0.0.12"
+    http_ip = "0.0.0.0"
+    http_server_connection(http_ip, dnsIP, clientIP)

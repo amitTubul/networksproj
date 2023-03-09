@@ -3,8 +3,8 @@ import socket
 
 from scapy.layers.dns import DNS, DNSRR, DNSQR
 from scapy.layers.inet import UDP, IP
-
-cache = {"google.com": "8.8.8.8"}  # dictionary to store cached domain names and their IP addresses
+# dictionary to store cached domain names and their IP addresses
+cache = {"http://http_server.com": "0.0.0.0", "http://redirected_http_server.com/example.txt": "10.0.2.15"}
 dnsIP = "10.0.0.12"
 
 
@@ -17,7 +17,7 @@ def dns_responder(pack):
     if DNS in pack and pack[DNS].qr == 0:
         # taking the requested website address and deleting the last byte because it is a null byte became '.'
         qname = pack[DNSQR].qname.decode('utf-8').rstrip('.')
-
+        print(qname)
         if qname in cache:
             # If the requested domain name is in the cache, return the cached IP address
             # building a packet layer by layer with ip, udp and dns and sending the response, src and dst ports is 53
@@ -49,4 +49,4 @@ def dns_responder(pack):
 
 
 if __name__ == "__main__":
-    sniff(filter="udp port 53", iface="enp0s3", prn=dns_responder)
+    sniff(filter="dst host 10.0.0.12", iface="enp0s3", prn=dns_responder)
