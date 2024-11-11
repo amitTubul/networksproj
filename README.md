@@ -1,10 +1,10 @@
-Certainly! Here’s a more detailed README with running explanations ready to be copied into a `README.md` file:
+Here's an updated README with information from the PDF:
 
 ---
 
 # Networks Project
 
-This repository contains the code for the Networks Project, developed as part of the Computer Science and Mathematics program. The project demonstrates [insert project purpose here, e.g., "a simulation of a peer-to-peer network protocol" or "a client-server communication model using sockets"].
+This project demonstrates the implementation of a networking protocol that uses both TCP and a reliable version of UDP (RUDP), along with DHCP and DNS servers to manage client-server communication. 
 
 ## Table of Contents
 
@@ -19,17 +19,17 @@ This repository contains the code for the Networks Project, developed as part of
 
 ## Overview
 
-This project explores [describe primary concepts like socket programming, threading, etc.]. It is designed to help understand the core principles of networking through practical implementation.
+This project explores network communication by setting up a client-server model that communicates using TCP or a custom Reliable UDP (RUDP) protocol. It includes a DHCP server to assign IPs and a DNS server to resolve domain names, creating a functional simulation of network-based interactions.
 
 ## Features
 
-- **Feature 1**: [Explain feature, e.g., "Establishes a server-client model to exchange messages."]
-- **Feature 2**: [Explain feature, e.g., "Implements multi-threading to handle multiple clients simultaneously."]
-- **Feature 3**: [Explain feature, e.g., "Includes a simple protocol to send structured messages between nodes."]
+- **DHCP Server**: Assigns IP addresses to clients for network communication.
+- **DNS Server**: Resolves domain names to IP addresses for the client.
+- **HTTP Server**: Handles HTTP requests and provides a response.
+- **RUDP Protocol**: Implements a UDP-based protocol with reliability features like SYN, FIN, and acknowledgment packets.
+- **Error Handling**: Raises errors when encountering issues with packet loss or latency.
 
 ## Installation
-
-Follow these steps to set up the project locally:
 
 1. **Clone the repository:**
 
@@ -43,72 +43,62 @@ Follow these steps to set up the project locally:
    cd networksproj
    ```
 
-3. **Install the dependencies**:
+3. **Install any necessary dependencies**:
+
+   Ensure Python 3 is installed, and use the following command to install additional packages if required:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-   > Note: If you encounter missing dependencies, you may need to adjust `requirements.txt` to fit your environment.
-
 ## Usage
 
-This project includes both server and client components. To run the application, follow these steps:
+To run the program, you’ll need four files: `client.py`, `dhcp.py`, `dns.py`, and `http_server.py`. Follow these steps to start the system:
 
-### 1. Start the Server
+1. Open separate terminals in the project directory for each file.
 
-In one terminal, navigate to the project directory and run the server:
+2. Run each script in the following order:
 
-```bash
-python src/server.py
-```
+   ```bash
+   sudo python3 dhcp.py
+   sudo python3 dns.py
+   sudo python3 http_server.py
+   sudo python3 client.py
+   ```
 
-The server should start and display a message confirming it's listening on the specified IP and port (adjustable in `config.py`).
+3. When prompted on the client terminal, choose between TCP or RUDP for communication.
 
-### 2. Run a Client
+### Process Overview
 
-Open a new terminal and navigate to the project directory. To start a client instance, run:
-
-```bash
-python src/client.py
-```
-
-The client will attempt to connect to the server, and once connected, it will [describe what happens next, e.g., prompt for input, start sending messages, etc.].
-
-### 3. Interact with the Network
-
-With multiple clients connected, you can test network interactions by [explain usage, e.g., "sending messages," "executing commands," etc.]. Each client can [describe interaction capabilities like message exchange, file transfer, etc.].
+1. **DHCP Connection**: The DHCP server assigns an IP address to the client for communication with the DNS and HTTP servers.
+2. **DNS Query**: The client sends a query to the DNS server, which responds with the HTTP server's address.
+3. **Server Communication**: Depending on the chosen protocol (TCP or RUDP), the client establishes a connection with the HTTP server, sends a request, and receives a response.
+4. **Redirection**: If necessary, the HTTP server may respond with a redirection, prompting the client to repeat the DNS and HTTP request process for the new address.
 
 ## Project Structure
 
-Here's an overview of the main files and directories:
-
-- `main.py`: The primary entry point for running the project.
-- `config.py`: Contains settings for IP addresses, port numbers, and other configurations.
-- `src/`: Directory with core components.
-  - `client.py`: The client-side code to connect and interact with the server.
-  - `server.py`: The server-side code to manage incoming client connections.
-- `tests/`: Contains test scripts to validate functionality.
-
-## Configuration
-
-You can adjust network settings and parameters in `config.py` to match your setup, including IP addresses, ports, and buffer sizes.
+- `client.py`: Manages client-side functionality, including connections with DHCP, DNS, and HTTP servers.
+- `dhcp.py`: DHCP server that assigns IP addresses to clients.
+- `dns.py`: DNS server for domain name resolution.
+- `http_server.py`: Handles HTTP requests and responses.
 
 ## Dependencies
 
-The following dependencies are required to run this project:
+- `socket`: For creating and managing network connections.
+- `threading`: To handle concurrent connections.
+- `pcapng`: (If used) for capturing and analyzing packet exchanges.
 
-- `socket`: For network communication.
-- `threading`: To handle multiple clients concurrently.
-- `json` or `pickle` (optional): For serializing data sent over the network.
+## Error and Latency Handling
 
-These libraries are available in the Python Standard Library, so no external installations should be needed unless further customization is done.
+- **DHCP**: Raises an error if the client fails to obtain an IP address.
+- **DNS**: Raises an error if an empty packet is received.
+- **Application Layer**: TCP handles packet loss natively, while RUDP raises an error if no response is received after 5 seconds.
 
 ## Contributing
 
-We welcome contributions! If you find a bug or have a feature request, feel free to open an issue or submit a pull request. 
+We welcome contributions! To contribute:
 
-1. Fork this repository.
+1. Fork the repository.
 2. Create a new branch (`git checkout -b feature-branch`).
 3. Make your changes and commit them (`git commit -m 'Add feature'`).
 4. Push to your branch (`git push origin feature-branch`).
@@ -119,5 +109,3 @@ We welcome contributions! If you find a bug or have a feature request, feel free
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
 
 ---
-
-You can paste this directly into your `README.md`. Let me know if you’d like further customization!
