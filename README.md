@@ -1,6 +1,3 @@
-Here's an updated README with information from the PDF:
-
----
 
 # Networks Project
 
